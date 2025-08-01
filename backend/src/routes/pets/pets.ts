@@ -3,21 +3,34 @@ import { CreatePetSchema,Pet} from '../../entities/Pet'
 import {DataSource} from "typeorm";
 
 export async function petRoutes(fastify: FastifyInstance, datasource: DataSource) {
-
+    interface PaginationQuery {
+        page?: string
+        limit?: string
+    }
     fastify.get('/pets', async (request, reply) => {
         try {
             const petRepository = datasource.getRepository(Pet)
-            const pets = await petRepository.find({
-                order: {
-                    created_at: 'DESC'
-                }
+
+            const { page = '1', limit = '10' } = request.query as PaginationQuery
+            const currentPage = parseInt(page)
+            const currentLimit = parseInt(limit)
+            const skip = (currentPage - 1) * currentLimit
+
+            const [pets, total] = await petRepository.findAndCount({
+                order: { created_at: 'DESC' },
+                skip,
+                take: currentLimit
             })
+
             return {
                 message: 'Pets retrieved successfully.',
-                pets:    pets,
-                count:   pets.length
+                pets,
+                page: currentPage,
+                limit: currentLimit,
+                total,
+                totalPages: Math.ceil(total / currentLimit)
             }
-        }catch (error) {
+        } catch (error) {
             reply.code(500)
             return {
                 error: 'Failed to retrieve pets',

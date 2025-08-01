@@ -11,10 +11,7 @@ const app= buildApp()
 const pool = new Pool({})
 export { app }
 
-// Test database connection
 
-
-// Start server
 async function start(): Promise<void> {
     try {
         // Connect to database first
